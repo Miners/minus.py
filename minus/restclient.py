@@ -255,8 +255,8 @@ def post_multipart(url, fields, headers=None):
     files is a sequence of (name, filename, value) elements for data to be uploaded as files
     Return the server's response page.
     """
-    from .poster.streaminghttp import register_openers
-    from .poster.encode import multipart_encode
+    from poster.streaminghttp import register_openers
+    from poster.encode import multipart_encode
     register_openers()
     datagen, multi_headers = multipart_encode(fields)
     headers.update(multi_headers)

@@ -1,0 +1,7 @@
+
+0.1 (2011-9-21)
+* Support Minus.com API version 2
+   - Using RESTclient library
+   - Folder, File, User objects
+   - Folder, File list
+* File uploading using HTTP streaming (poster library)
