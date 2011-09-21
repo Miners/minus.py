@@ -20,8 +20,20 @@ class Folder(MinusObject):
     def get_files(self):
         return FileList(self._client, self['files'])
 
-    def add_file(self, file_object):
-        return file_object.save(create_url=self['files'])
+    def add_file(self, file_object, filename, caption=''):
+        """Add (upload) new file to the folder.
+
+        Arguments:
+            :file_object: file like object
+            :filename: filename string
+            :caption: caption
+        """
+        params = {
+            'filename': filename, 
+            'caption': caption, 
+            'file': file_object,
+        }
+        return self._client.post(self['files'], params=params)
      
 class FolderList(MinusList):
     object_cls = Folder

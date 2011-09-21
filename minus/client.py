@@ -13,11 +13,11 @@ class MinusClient(object):
         }
 
     def put(self, url, params, files=None):
-        content = PUT(url, params=params, files=files, headers=self._get_auth_header(), async=False)
+        content = PUT(url, params=params, headers=self._get_auth_header(), async=False)
         return json.loads(content)
 
     def post(self, url, params, files=None):
-        content = POST(url, params=params, files=files, headers=self._get_auth_header(), async=False)
+        content = POST(url, params=params, headers=self._get_auth_header(), async=False)
         return json.loads(content)
 
     def delete(self, url):

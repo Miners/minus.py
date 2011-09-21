@@ -2,8 +2,9 @@ from .list import MinusList
 from .object import MinusObject
 
 class File(MinusObject):
+    _fileobj = None
 
-    def __init__(self, client, url, fileobj, *args, **kwargs):
+    def __init__(self, client, url, fileobj=None, *args, **kwargs):
         self._fileobj = fileobj
         super(File, self).__init__(client, url, *args, **kwargs)
 
@@ -18,11 +19,14 @@ class File(MinusObject):
             'filename': self['filename']
         }
 
-    def save(self, create_url=None):
-        if self._id:
+    def save(self):
+        if self['id']:
             self.update(self._client.put(self._url, params=self.get_update_values()))
-        elif create_url:
-            self.update(self._client.post(create_url, params=self.get_create_values(), files={'file': self._fileobj}))
+
+    def get_folder(self):
+        from .folder import Folder
+        return Folder(self._client, self['folder'])
+        
         
 
 class FileList(MinusList):

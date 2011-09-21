@@ -2,9 +2,7 @@
 
 
 class MinusList(object):
-    
     object_cls = None
-
     _client = None
     _url = None
     _initialized = False
@@ -18,17 +16,18 @@ class MinusList(object):
     def _initialize(self):
         response = self._client.get(self._url)
         
+        self._add_items(response['results'], 0)
         self._pages = response['pages']
         self._per_page = response['per_page']
         self._total = response['total']
-        self._pages_loaded = set(0) 
+        self._pages_loaded = set([0]) 
         self._initialized = True
 
 
     def _add_items(self, items, start_index=0):
         index = start_index
         for item in items:
-            obj = self.object_cls(self._client, item['url'], **item)
+            obj = self.object_cls(self._client, **item)
             self._items[index] = obj
             index += 1
 
@@ -63,6 +62,16 @@ class MinusList(object):
             self._initialize()
         return self._total
 
+    def __getitem__(self, key):
+        if not self._initialized:
+            self._initialize()
+
+        try:
+            return self._items[key]
+        except KeyError:
+            self._get_page(int(key / self._per_page))
+            return self._items[key]
+
     def next(self):
         if not self._initialized:
             self._initialize()
@@ -72,8 +81,8 @@ class MinusList(object):
 
         try:
             next_item = self._items[self.current]
-        except IndexError:
-            self._get_page(self.current * self._per_page)
+        except KeyError:
+            self._get_page(int(self.current / self._per_page))
             next_item = self._items[self.current]
 
         self.current += 1

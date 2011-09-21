@@ -5,24 +5,15 @@ from .file import File
 
 class Minus(object):
     _client = None
-    _baseurl = None
+    baseurl = None
 
     def __init__(self, access_key, baseurl='https://minus.com/api/v2'):
         self._client = MinusClient(access_key)
-        self._baseurl = baseurl
+        self.baseurl = baseurl
         
     def get_activeuser(self):
         return User(self._client, '%s/activeuser' % self.baseurl)
         
-    def get_activeuser_feed(self):
-        return FolderList(self._client, '%s/activeuser/feed' % self.baseurl)
-        
-    def get_activeuser_history(self):
-        return FolderList(self._client, '%s/activeuser/history' % self.baseurl)
-        
-    def get_activeuser_mine(self):
-        return FolderList(self._client, '%s/activeuser/mine' % self.baseurl)
-
     def get_folder(self, id):
         return Folder(self._client, '%s/folders/%s' % (self.baseurl, id))
 

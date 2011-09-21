@@ -52,7 +52,6 @@ Joe Gregario's httplib2 library is required. It can be easy_installed, or downlo
 nose is required to run the unit tests.
 
 CHANGESET:
-  * 2010-10-11 - Anders - added 'credentials' parameter to support HTTP Auth
   * 2010-07-25 - Anders - merged Greg Baker's <gregb@ifost.org.au> patch for https urls
   * 2007-06-13 - Anders - added experimental, partial support for HTTPCallback
   * 2007-03-28 - Anders - merged Christopher Hesse's patches for fix_params and to eliminate
@@ -78,59 +77,7 @@ import urllib2,urllib, mimetypes, types, thread, httplib2
 
 __version__ = "0.10.1"
 
-def post_multipart(host, selector, method,fields, files, headers=None,return_resp=False, scheme="http", credentials=None):
-    """
-    Post fields and files to an http host as multipart/form-data.
-    fields is a sequence of (name, value) elements for regular form fields.
-    files is a sequence of (name, filename, value) elements for data to be uploaded as files
-    Return the server's response page.
-    """
-    if headers is None: headers = {}
-    content_type, body = encode_multipart_formdata(fields, files)
-    h = httplib2.Http()
-    if credentials:
-        h.add_credentials(*credentials)
-    headers['Content-Length'] = str(len(body))
-    headers['Content-Type']   = content_type
-    resp, content = h.request("%s://%s%s" % (scheme,host,selector),method,body,headers)
-    if return_resp:
-        return resp, content
-    else:
-        return content
-
-def encode_multipart_formdata(fields, files):
-    """
-    fields is a sequence of (name, value) elements for regular form fields.
-    files is a sequence of (name, filename, value) elements for data to be uploaded as files
-    Return (content_type, body) ready for httplib.HTTP instance
-    """
-    BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
-    CRLF = '\r\n'
-    L = []
-    for (key, value) in fields:
-        L.append('--' + BOUNDARY)
-        L.append('Content-Disposition: form-data; name="%s"' % key)
-        L.append('')
-        L.append(str(value))
-    for (key, filename, value) in files:
-        L.append('--' + BOUNDARY)
-        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
-        L.append('Content-Type: %s' % get_content_type(filename))
-        L.append('')
-        L.append(str(value))
-    L.append('--' + BOUNDARY + '--')
-    L.append('')
-    L = [str(l) for l in L]
-
-    body = CRLF.join(L)
-    content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
-    return content_type, body
-
-def get_content_type(filename):
-    return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-
-
-def GET(url,params=None,files=None,accept=[],headers=None,async=False,resp=False,credentials=None):
+def GET(url,params=None,accept=[],headers=None,async=False):
     """ make an HTTP GET request.
 
     performs a GET request to the specified URL and returns the body of the response.
@@ -144,9 +91,9 @@ def GET(url,params=None,files=None,accept=[],headers=None,async=False,resp=False
     if resp=True is passed in, it will return a tuple of an httplib2 response object
     and the content instead of just the content. 
     """
-    return rest_invoke(url=url,method=u"GET",params=params,files=files,accept=accept,headers=headers,async=async,resp=resp,credentials=credentials)
+    return rest_invoke(url=url,method=u"GET",params=params,accept=accept,headers=headers,async=async)
 
-def POST(url,params=None,files=None,accept=[],headers=None,async=True,resp=False,credentials=None):
+def POST(url,params=None,accept=[],headers=None,async=True):
     """ make an HTTP POST request.
 
     performs a POST request to the specified URL.
@@ -167,9 +114,9 @@ def POST(url,params=None,files=None,accept=[],headers=None,async=True,resp=False
     if resp=True is passed in, it will return a tuple of an httplib2 response object
     and the content instead of just the content. 
     """
-    return rest_invoke(url=url,method=u"POST",params=params,files=files,accept=accept,headers=headers,async=async,resp=resp,credentials=credentials)
+    return rest_invoke(url=url,method=u"POST",params=params,accept=accept,headers=headers,async=async)
 
-def PUT(url,params=None,files=None,accept=[],headers=None,async=True,resp=False,credentials=None):
+def PUT(url,params=None,accept=[],headers=None,async=True):
     """ make an HTTP PUT request.
 
     performs a PUT request to the specified URL.
@@ -191,9 +138,9 @@ def PUT(url,params=None,files=None,accept=[],headers=None,async=True,resp=False,
     and the content instead of just the content. 
     """
 
-    return rest_invoke(url=url,method=u"PUT",params=params,files=files,accept=accept,headers=headers,async=async,resp=resp,credentials=credentials)
+    return rest_invoke(url=url,method=u"PUT",params=params,accept=accept,headers=headers,async=async)
 
-def DELETE(url,params=None,files=None,accept=[],headers=None,async=True,resp=False,credentials=None):
+def DELETE(url,params=None,files=None,accept=[],headers=None,async=True):
     """ make an HTTP DELETE request.
 
     performs a DELETE request to the specified URL.
@@ -209,9 +156,9 @@ def DELETE(url,params=None,files=None,accept=[],headers=None,async=True,resp=Fal
     and the content instead of just the content. 
     """
     
-    return rest_invoke(url=url,method=u"DELETE",params=params,files=files,accept=accept,headers=headers,async=async,resp=resp,credentials=credentials)
+    return rest_invoke(url=url,method=u"DELETE",params=params,accept=accept,headers=headers,async=async)
 
-def rest_invoke(url,method=u"GET",params=None,files=None,accept=[],headers=None,async=False,resp=False,httpcallback=None,credentials=None):
+def rest_invoke(url,method=u"GET",params=None,accept=[],headers=None,async=False,resp=False):
     """ make an HTTP request with all the trimmings.
 
     rest_invoke() will make an HTTP request and can handle all the
@@ -252,57 +199,30 @@ def rest_invoke(url,method=u"GET",params=None,files=None,accept=[],headers=None,
     
     """
     if async:
-        thread.start_new_thread(_rest_invoke,(url,method,params,files,accept,headers,resp,httpcallback,credentials))
+        thread.start_new_thread(_rest_invoke,(url,method,params,accept,headers,resp))
     else:
-        return _rest_invoke(url,method,params,files,accept,headers,resp,httpcallback,credentials)
+        return _rest_invoke(url,method,params,accept,headers,resp)
 
-def _rest_invoke(url,method=u"GET",params=None,files=None,accept=None,headers=None,resp=False,httpcallback=None,credentials=None):
+def _rest_invoke(url,method=u"GET",params=None,accept=None,headers=None,resp=False):
     if params  is None: params  = {}
-    if files   is None: files   = {}
     if accept  is None: accept  = []
     if headers is None: headers = {}
-
-    if httpcallback is not None:
-        method = httpcallback.method
-        url    = httpcallback.url
-        if httpcallback.queryString != "":
-            if "?" not in url:
-                url += "?" + httpcallback.queryString
-            else:
-                url += "&" * httpcallback.queryString
-        ps = httpcallback.params
-        for (k,v) in ps:
-            params[k] = v
-        hs = httpcallback.headers
-        for (k,v) in hs:
-            headers[k] = v
-
-        if httpcallback.username or httpcallback.password:
-            print "warning: restclient can't handle HTTP auth yet"
-        if httpcallback.redirections != 5:
-            print "warning: restclient doesn't support HTTPCallback's restrictions yet"
-        if httpcallback.follow_all_redirects:
-            print "warning: restclient doesn't support HTTPCallback's follow_all_redirects_yet"
-        if httpcallback.body != "":
-            print "warning: restclient doesn't support HTTPCallback's body yet"
-        
     
     headers = add_accepts(accept,headers)
-    if files:
-        return post_multipart(extract_host(url),extract_path(url),
-                              method,
-                              unpack_params(fix_params(params)),
-                              unpack_files(fix_files(files)),
-                              fix_headers(headers),
-                              resp, scheme=extract_scheme(url),
-                              credentials=credentials)
+
+    has_file = False
+    for value in params.values():
+        if type(value) == file:
+            has_file = True
+
+    if method == u"POST" and has_file:
+        return post_multipart(url, params, fix_headers(headers))
     else:
         return non_multipart(fix_params(params), extract_host(url),
                              method, extract_path(url), fix_headers(headers),resp,
-                             scheme=extract_scheme(url),
-                             credentials=credentials)
+                             scheme=extract_scheme(url))
 
-def non_multipart(params,host,method,path,headers,return_resp,scheme="http",credentials=None):
+def non_multipart(params,host,method,path,headers,return_resp,scheme="http"):
     params = urllib.urlencode(params)
     if method == "GET":
         headers['Content-Length'] = '0'
@@ -321,14 +241,27 @@ def non_multipart(params,host,method,path,headers,return_resp,scheme="http",cred
     if method in ['POST', 'PUT'] and not headers.has_key('Content-Type'):
         headers['Content-Type'] = 'application/x-www-form-urlencoded'
     h = httplib2.Http()
-    if credentials:
-        h.add_credentials(*credentials)
     url = "%s://%s%s" % (scheme,host,path)
     resp,content = h.request(url,method.encode('utf-8'),params.encode('utf-8'),headers)
     if return_resp:
         return resp,content
     else:
         return content
+
+def post_multipart(url, fields, headers=None):
+    """
+    Post fields and files to an http host as multipart/form-data.
+    fields is a sequence of (name, value) elements for regular form fields.
+    files is a sequence of (name, filename, value) elements for data to be uploaded as files
+    Return the server's response page.
+    """
+    from .poster.streaminghttp import register_openers
+    from .poster.encode import multipart_encode
+    register_openers()
+    datagen, multi_headers = multipart_encode(fields)
+    headers.update(multi_headers)
+    request = urllib2.Request(url, datagen, headers)
+    return urllib2.urlopen(request).read()
 
 def extract_host(url):
     return my_urlparse(url)[1]
@@ -412,26 +345,4 @@ def fix_headers(headers=None):
             headers[new_k] = new_v
             del headers[k]
     return headers
-
-def fix_files(files=None):
-    if files is None: files = {}
-    # fix keys in files
-    for k in files.keys():
-        if type(k) not in types.StringTypes:
-            new_k = str(k)
-            files[new_k] = files[k]
-            del files[k]
-        try:
-            k = k.encode('ascii')
-        except UnicodeEncodeError:
-            new_k = k.encode('utf8')
-            files[new_k] = files[k]
-            del files[k]                
-    # second pass to fix filenames
-    for k in files.keys():
-        try:
-            f = files[k]['filename'].encode('ascii')
-        except UnicodeEncodeError:
-            files[k]['filename'] = files[k]['filename'].encode('utf8')
-    return files
 

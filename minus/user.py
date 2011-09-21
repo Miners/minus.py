@@ -9,7 +9,14 @@ class User(MinusObject):
         }
 
     def get_folders(self):
-        return FolderList(self['folders'])
+        return FolderList(self._client, self['folders'])
+
+    def create_folder(self, name, is_public=False):
+        params = {
+            'name': name, 
+            'is_public': is_public,
+        }
+        return self._client.post(self['folders'], params=params)
 
 class UserList(MinusList):
     object_cls = User

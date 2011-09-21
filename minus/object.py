@@ -1,8 +1,5 @@
-from UserDict import IterableUserDict
 
-
-class MinusObject(IterableUserDict):
-
+class MinusObject(dict):
     _url = None
     _client = None
 
@@ -25,7 +22,7 @@ class MinusObject(IterableUserDict):
         raise NotImplementedError()
 
     def save(self, create_url=None):
-        if self._id:
+        if self['id']:
             self.update(self._client.put(self._url, params=self.get_update_values()))
         elif create_url:
             self.update(self._client.post(create_url, params=self.get_create_values()))
