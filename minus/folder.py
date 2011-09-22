@@ -1,6 +1,6 @@
 from .object import MinusObject
 from .list import MinusList
-from .file import FileList
+from .file import File, FileList
 
 class Folder(MinusObject):
     """ Folder represents a Minus Folder which belongs to a User and can have
@@ -38,7 +38,8 @@ class Folder(MinusObject):
             'caption': caption, 
             'file': file_object,
         }
-        return self._client.post(self['files'], params=params)
+        raw_file = self._client.post(self['files'], params=params)
+        return File(self._client, **raw_file)
      
 class FolderList(MinusList):
     """ List of Folders (i.e. User's folders)"""

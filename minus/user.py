@@ -1,6 +1,6 @@
 from .object import MinusObject
 from .list import MinusList
-from .folder import FolderList
+from .folder import Folder, FolderList
 
 class User(MinusObject):
     def _get_update_values(self):
@@ -23,7 +23,8 @@ class User(MinusObject):
             'name': name, 
             'is_public': is_public,
         }
-        return self._client.post(self['folders'], params=params)
+        raw_folder = self._client.post(self['folders'], params=params)
+        return Folder(self._client, **raw_folder)
 
 class UserList(MinusList):
     """ List of Users. """
