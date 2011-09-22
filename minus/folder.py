@@ -3,21 +3,26 @@ from .list import MinusList
 from .file import FileList
 
 class Folder(MinusObject):
+    """ Folder represents a Minus Folder which belongs to a User and can have
+    Files.
+    
+    Folders can be created using User.create_folder method"""
 
-    def get_update_values(self):
+    def _get_update_values(self):
         return {
             'name': self['name'],
             'is_public': self['is_public'],
             'item_ordering': self['item_ordering']
         }
 
-    def get_create_values(self):
+    def _get_create_values(self):
         return {
             'name': self['name'],
             'is_public': self['is_public']
         }
 
     def get_files(self):
+        """ Returns a list of files in the Folder. """
         return FileList(self._client, self['files'])
 
     def add_file(self, file_object, filename, caption=''):
@@ -36,4 +41,5 @@ class Folder(MinusObject):
         return self._client.post(self['files'], params=params)
      
 class FolderList(MinusList):
+    """ List of Folders (i.e. User's folders)"""
     object_cls = Folder

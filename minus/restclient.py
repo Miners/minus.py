@@ -52,6 +52,7 @@ Joe Gregario's httplib2 library is required. It can be easy_installed, or downlo
 nose is required to run the unit tests.
 
 CHANGESET:
+  * 2011-09-22 - @macat - Cleanup for Minus.com
   * 2010-07-25 - Anders - merged Greg Baker's <gregb@ifost.org.au> patch for https urls
   * 2007-06-13 - Anders - added experimental, partial support for HTTPCallback
   * 2007-03-28 - Anders - merged Christopher Hesse's patches for fix_params and to eliminate
@@ -73,92 +74,11 @@ n                          and we now use post_multipart for everything since it
 """
 
 
-import urllib2,urllib, mimetypes, types, thread, httplib2
+import urllib2,urllib, types, httplib
 
 __version__ = "0.10.1"
 
-def GET(url,params=None,accept=[],headers=None,async=False):
-    """ make an HTTP GET request.
-
-    performs a GET request to the specified URL and returns the body of the response.
-    
-    in addition, parameters and headers can be specified (as dicts). a list of mimetypes
-    to accept may be specified.
-
-    if async=True is passed in, it will perform the request in a new thread
-    and immediately return nothing.
-
-    if resp=True is passed in, it will return a tuple of an httplib2 response object
-    and the content instead of just the content. 
-    """
-    return rest_invoke(url=url,method=u"GET",params=params,accept=accept,headers=headers,async=async)
-
-def POST(url,params=None,accept=[],headers=None,async=True):
-    """ make an HTTP POST request.
-
-    performs a POST request to the specified URL.
-    
-    in addition, parameters and headers can be specified (as dicts). a list of mimetypes
-    to accept may be specified.
-
-    files to upload may be specified. the data structure for them is:
-
-       param : {'file' : file object, 'filename' : filename}
-
-    and immediately return nothing.
-
-    by default POST() performs the request in a new thread and returns (nothing) immediately.
-
-    To wait for the response and have it return the body of the response, specify async=False. 
-
-    if resp=True is passed in, it will return a tuple of an httplib2 response object
-    and the content instead of just the content. 
-    """
-    return rest_invoke(url=url,method=u"POST",params=params,accept=accept,headers=headers,async=async)
-
-def PUT(url,params=None,accept=[],headers=None,async=True):
-    """ make an HTTP PUT request.
-
-    performs a PUT request to the specified URL.
-    
-    in addition, parameters and headers can be specified (as dicts). a list of mimetypes
-    to accept may be specified.
-
-    files to upload may be specified. the data structure for them is:
-
-       param : {'file' : file object, 'filename' : filename}
-
-    and immediately return nothing.
-
-    by default PUT() performs the request in a new thread and returns (nothing) immediately.
-
-    To wait for the response and have it return the body of the response, specify async=False. 
-
-    if resp=True is passed in, it will return a tuple of an httplib2 response object
-    and the content instead of just the content. 
-    """
-
-    return rest_invoke(url=url,method=u"PUT",params=params,accept=accept,headers=headers,async=async)
-
-def DELETE(url,params=None,files=None,accept=[],headers=None,async=True):
-    """ make an HTTP DELETE request.
-
-    performs a DELETE request to the specified URL.
-    
-    in addition, parameters and headers can be specified (as dicts). a list of mimetypes
-    to accept may be specified.
-
-    by default DELETE() performs the request in a new thread and returns (nothing) immediately.
-
-    To wait for the response and have it return the body of the response, specify async=False. 
-
-    if resp=True is passed in, it will return a tuple of an httplib2 response object
-    and the content instead of just the content. 
-    """
-    
-    return rest_invoke(url=url,method=u"DELETE",params=params,accept=accept,headers=headers,async=async)
-
-def rest_invoke(url,method=u"GET",params=None,accept=[],headers=None,async=False,resp=False):
+def rest_invoke(url, method=u"GET", params=None, accept=None, headers=None):
     """ make an HTTP request with all the trimmings.
 
     rest_invoke() will make an HTTP request and can handle all the
@@ -186,24 +106,9 @@ def rest_invoke(url,method=u"GET",params=None,accept=[],headers=None,async=False
     url: the full url you are making the request to
     method: HTTP verb to use. defaults to GET
     params: dictionary of params to include in the request
-    files: dictionary of files to upload. the structure is
-
-          param : {'file' : file object, 'filename' : filename}
-
     accept: list of mimetypes to accept in order of preference. defaults to '*/*'
     headers: dictionary of additional headers to send to the server
-    async: Boolean. if true, does request in new thread and nothing is returned
-    resp: Boolean. if true, returns a tuple of response,content. otherwise returns just content
-    httpcallback: None. an HTTPCallback object (see http://microapps.org/HTTP_Callback). If specified, it will
-                  override the other params.
-    
     """
-    if async:
-        thread.start_new_thread(_rest_invoke,(url,method,params,accept,headers,resp))
-    else:
-        return _rest_invoke(url,method,params,accept,headers,resp)
-
-def _rest_invoke(url,method=u"GET",params=None,accept=None,headers=None,resp=False):
     if params  is None: params  = {}
     if accept  is None: accept  = []
     if headers is None: headers = {}
@@ -219,10 +124,10 @@ def _rest_invoke(url,method=u"GET",params=None,accept=None,headers=None,resp=Fal
         return post_multipart(url, params, fix_headers(headers))
     else:
         return non_multipart(fix_params(params), extract_host(url),
-                             method, extract_path(url), fix_headers(headers),resp,
+                             method, extract_path(url), fix_headers(headers),
                              scheme=extract_scheme(url))
 
-def non_multipart(params,host,method,path,headers,return_resp,scheme="http"):
+def non_multipart(params, host, method, path, headers, scheme="http"):
     params = urllib.urlencode(params)
     if method == "GET":
         headers['Content-Length'] = '0'
@@ -240,13 +145,16 @@ def non_multipart(params,host,method,path,headers,return_resp,scheme="http"):
         headers['Content-Length'] = str(len(params))
     if method in ['POST', 'PUT'] and not headers.has_key('Content-Type'):
         headers['Content-Type'] = 'application/x-www-form-urlencoded'
-    h = httplib2.Http()
-    url = "%s://%s%s" % (scheme,host,path)
-    resp,content = h.request(url,method.encode('utf-8'),params.encode('utf-8'),headers)
-    if return_resp:
-        return resp,content
+
+    if scheme == 'https':
+        connection = httplib.HTTPSConnection(host)
     else:
-        return content
+        connection = httplib.HTTPConnection(host)
+
+    connection.request(method, path, params.encode('utf-8'), headers)
+    response = connection.getresponse()
+    content = response.read()
+    return response.status, content
 
 def post_multipart(url, fields, headers=None):
     """
@@ -261,7 +169,14 @@ def post_multipart(url, fields, headers=None):
     datagen, multi_headers = multipart_encode(fields)
     headers.update(multi_headers)
     request = urllib2.Request(url, datagen, headers)
-    return urllib2.urlopen(request).read()
+    status = 200
+    try:
+        response = urllib2.urlopen(request)
+    except urllib2.HTTPError, e:
+        status = response.code
+
+    return status, response.read()
+
 
 def extract_host(url):
     return my_urlparse(url)[1]
