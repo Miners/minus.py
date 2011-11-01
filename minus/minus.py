@@ -7,8 +7,8 @@ class Minus(object):
     _client = None
     baseurl = None
 
-    def __init__(self, access_key, baseurl='https://minus.com/api/v2'):
-        self._client = MinusClient(access_key)
+    def __init__(self, access_key, secret, username, password,baseurl='https://minus.com/api/v2'):
+        self._client = MinusClient(access_key,secret,username,password)
         self.baseurl = baseurl
         
     def get_activeuser(self):
