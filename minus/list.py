@@ -76,15 +76,15 @@ class MinusList(object):
         if not self._initialized:
             self._initialize()
 
-        if self.current >= self._total:
+        if self._current >= self._total:
             raise StopIteration
 
         try:
-            next_item = self._items[self.current]
+            next_item = self._items[self._current]
         except KeyError:
-            self._get_page(int(self.current / self._per_page))
-            next_item = self._items[self.current]
+            self._get_page(int(self._current / self._per_page))
+            next_item = self._items[self._current]
 
-        self.current += 1
+        self._current += 1
         return next_item
 
