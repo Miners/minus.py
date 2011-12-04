@@ -170,10 +170,13 @@ def post_multipart(url, fields, headers=None):
     headers.update(multi_headers)
     request = urllib2.Request(url, datagen, headers)
     status = 200
+    
     try:
         response = urllib2.urlopen(request)
     except urllib2.HTTPError, e:
-        status = response.code
+        # Reponse doesn't exist if we land here!
+        #status = response.code
+        print e
 
     return status, response.read()
 

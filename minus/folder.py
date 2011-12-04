@@ -38,7 +38,7 @@ class Folder(MinusObject):
             'caption': caption, 
             'file': file_object,
         }
-        raw_file = self._client.post(self['files'], params=params)
+        raw_file = self._client.post(self['files'] + '?bearer_token=' + self._client.bearer_token, params=params)
         return File(self._client, **raw_file)
      
 class FolderList(MinusList):

@@ -32,7 +32,7 @@ Examples
 Authenticate::
 
     from minus import Minus
-    m = Minus('==== access key ====', 'https://minus.com/api/v2')
+    m = Minus('==== access key ====','==== secret key ====','==== username ====','==== password ====', 'https://minus.com/api/v2')
 
 Get active User::
 

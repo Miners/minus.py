@@ -22,18 +22,32 @@ class MinusBadRequestError(MinusError):
 
 class MinusClient(object):
     access_key = ''
+    secret = ''
+    username = ''
+    password = ''
+    authurl = ''
+    bearer_token = None
+    refresh_token = None
 
-    def __init__(self, access_key):
+    def __init__(self, access_key,secret,username,password,authurl='https://minus.com/oauth/token'):
         self.access_key = access_key
-
-    def _get_auth_header(self):
-        return {
-            'Authorization': 'Bearer %s' % self.access_key
-        }
-    
+        self.secret = secret
+        self.username = username
+        self.password = password    
+        self.authurl = authurl
+        
+        json_content = self._authenticate()
+        
+        self.bearer_token=json_content['access_token']
+        self.refresh_token=json_content['refresh_token']
+            
     def _rest_invoke(self, url, method, params={}):
-        status, content = rest_invoke(url, method=method, params=params, 
-            headers=self._get_auth_header())
+        headers_params={}
+        
+        if self.bearer_token:
+            params['bearer_token']=self.bearer_token            
+                     
+        status, content = rest_invoke(url, method=method, params=params,headers=headers_params)
 
         json_content = json.loads(content)
 
@@ -47,8 +61,12 @@ class MinusClient(object):
             raise MinusBadRequestError(json_content)
 
         return json_content
-
-
+    
+    def _authenticate(self):
+        # scope = read_public || upload_new
+        params={'grant_type':'password','client_id':self.access_key,'client_secret':self.secret,'scope':'upload_new','username':self.username,'password':self.password}
+        return self.post(self.authurl,params)
+        
     def put(self, url, params, files=None):
         return self._rest_invoke(url, method="PUT", params=params)
 
@@ -58,6 +76,6 @@ class MinusClient(object):
     def delete(self, url):
         return self._rest_invoke(url, method="DELETE")
 
-    def get(self, url):
+    def get(self, url):    
         return self._rest_invoke(url, method="GET")
 
